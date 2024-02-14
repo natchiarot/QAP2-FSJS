@@ -23,8 +23,12 @@ const server = http.createServer((request, response) => {
         "INFO",
         "Root page rendered successfully."
       );
-      serverPage("./views/home.html", response);
-      console.log("Root page rendered successfully.");
+      serverPage(
+        "./views/home.html",
+        response,
+        "Root page rendered successfully."
+      );
+      // console.log("Root page rendered successfully.");
       break;
     case "/about":
       myEmitter.emit(
@@ -33,8 +37,12 @@ const server = http.createServer((request, response) => {
         "INFO",
         "About page rendered successfully."
       );
-      serverPage("./views/about.html", response);
-      console.log("About page rendered successfully.");
+      serverPage(
+        "./views/about.html",
+        response,
+        "About page rendered successfully."
+      );
+      // console.log("About page rendered successfully.");
       break;
     case "/contact":
       myEmitter.emit(
@@ -43,18 +51,26 @@ const server = http.createServer((request, response) => {
         "INFO",
         "Contact page rendered successfully."
       );
-      serverPage("./views/contact.html", response);
-      console.log("Contact page rendered successfully.");
+      serverPage(
+        "./views/contact.html",
+        response,
+        "Contact page rendered successfully."
+      );
+      // console.log("Contact page rendered successfully.");
       break;
     case "/products":
       myEmitter.emit(
         "event",
         request.url,
         "INFO",
-        "Contact page rendered successfully."
+        "Products page rendered successfully."
       );
-      serverPage("./views/contact.html", response);
-      console.log("Products page rendered successfully.");
+      serverPage(
+        "./views/contact.html",
+        response,
+        "Products page rendered successfully."
+      );
+      // console.log("Products page rendered successfully.");
       break;
     case "/subscribe":
       myEmitter.emit(
@@ -63,8 +79,12 @@ const server = http.createServer((request, response) => {
         "INFO",
         "Subscribe page rendered successfully."
       );
-      serverPage("./views/subscribe.html", response);
-      console.log("Subscribe page rendered successfully.");
+      serverPage(
+        "./views/subscribe.html",
+        response,
+        "Subscribe page rendered successfully."
+      );
+      // console.log("Subscribe page rendered successfully.");
       break;
     case "/updates":
       myEmitter.emit(
@@ -73,8 +93,12 @@ const server = http.createServer((request, response) => {
         "INFO",
         "Updates page rendered successfully."
       );
-      serverPage("./views/updates.html", response);
-      console.log("Updates page rendered successfully.");
+      serverPage(
+        "./views/updates.html",
+        response,
+        "Updates page rendered successfully."
+      );
+      // console.log("Updates page rendered successfully.");
       break;
     case "/promotions":
       myEmitter.emit(
@@ -83,16 +107,16 @@ const server = http.createServer((request, response) => {
         "INFO",
         "Promotions page rendered successfully."
       );
-      serverPage("./views/promotions.html", response);
-      console.log("Promotions page rendered successfully.");
+      serverPage(
+        "./views/promotions.html",
+        response,
+        "Promotions page rendered successfully."
+      );
+      // console.log("Promotions page rendered successfully.");
       break;
     default:
-      let errorMessage = `404 Not Found, ${request.url}`;
-      if (DEBUG) console.log(errorMessage);
-      myEmitter.emit("error", errorMessage);
-      response.writeHead(404, { "Content-Type": "text/plain" });
-      response.write("404 Not Found");
-      response.end();
+      let errorMessage = request.url;
+      if (DEBUG) myEmitter.emit("error", errorMessage);
       break;
   }
 });
@@ -101,7 +125,7 @@ server.listen(port, () => {
   console.log(`The server is running on port ${port}`);
 });
 
-function serverPage(filePath, response) {
+function serverPage(filePath, response, message) {
   fs.readFile(filePath, function (err, data) {
     if (err) {
       myEmitter.emit("ERROR", err);
@@ -109,8 +133,18 @@ function serverPage(filePath, response) {
       response.write(`500 Internal Server Error`);
       return response.end();
     }
-    response.writeHead(200, { "Content-Type": "text/html" });
+
+    // Determining the appropriate status code - to make it more dynamic.
+    const statusCode = message ? 200 : 404;
+
+    response.writeHead(statusCode, { "Content-Type": "text/html" });
     response.write(data);
     response.end();
+
+    if (statusCode !== 200) {
+      myEmitter.emit("status", statusCode, "Not Found");
+    } else {
+      myEmitter.emit("status", statusCode, "OK");
+    }
   });
 }
