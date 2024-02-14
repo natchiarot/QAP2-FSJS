@@ -1,11 +1,11 @@
 const { error } = require("console");
 const http = require("http");
+const fs = require("fs");
+const myEmitter = require("./logEvents");
 
 const port = 3003;
 
 global.DEBUG = true;
-
-const fs = require("fs");
 
 const server = http.createServer((request, response) => {
   if (request.url === "/favicon.ico") {
@@ -73,8 +73,12 @@ const server = http.createServer((request, response) => {
       console.log("Promotions page rendered successfully.");
       break;
     default:
-      let errorMessage = `${request.url} Not Found`;
+      let errorMessage = `404 Not Found, ${request.url}`;
       if (DEBUG) console.log(errorMessage);
+      myEmitter.emit("error", errorMessage);
+      response.writeHead(404, { "Content-Type": "text/plain" });
+      response.write("404 Not Found");
+      response.end();
       break;
   }
 });
