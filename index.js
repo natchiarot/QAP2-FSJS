@@ -1,11 +1,11 @@
 const { error } = require("console");
 const http = require("http");
+const fs = require("fs");
+const myEmitter = require("./logEvents");
 
 const port = 3003;
 
 global.DEBUG = true;
-
-const fs = require("fs");
 
 const server = http.createServer((request, response) => {
   if (request.url === "/favicon.ico") {
@@ -17,7 +17,7 @@ const server = http.createServer((request, response) => {
   if (DEBUG) console.log(`Request url: ${request.url}`);
   switch (request.url) {
     case "/":
-      fs.readFile("./views/home.html", function (err, data) {
+      fs.readFile("./views/home.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -25,7 +25,7 @@ const server = http.createServer((request, response) => {
       console.log("Root page rendered successfully.");
       break;
     case "/about":
-      fs.readFile("./views/about.html", function (err, data) {
+      fs.readFile("./views/about.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -33,7 +33,7 @@ const server = http.createServer((request, response) => {
       console.log("About page rendered successfully.");
       break;
     case "/contact":
-      fs.readFile("./views/contact.html", function (err, data) {
+      fs.readFile("./views/contact.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -41,7 +41,7 @@ const server = http.createServer((request, response) => {
       console.log("Contact page rendered successfully.");
       break;
     case "/products":
-      fs.readFile("./views/products.html", function (err, data) {
+      fs.readFile("./views/products.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -49,7 +49,7 @@ const server = http.createServer((request, response) => {
       console.log("Products page rendered successfully.");
       break;
     case "/subscribe":
-      fs.readFile("./views/subscribe.html", function (err, data) {
+      fs.readFile("./views/subscribe.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -57,7 +57,7 @@ const server = http.createServer((request, response) => {
       console.log("Subscribe page rendered successfully.");
       break;
     case "/updates":
-      fs.readFile("./views/updates.html", function (err, data) {
+      fs.readFile("./views/updates.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -65,7 +65,7 @@ const server = http.createServer((request, response) => {
       console.log("Updates page rendered successfully.");
       break;
     case "/promotions":
-      fs.readFile("./views/promotions.html", function (err, data) {
+      fs.readFile("./views/promotions.html", function (data) {
         response.writeHead(200, { "Content-Type": "text/html" });
         response.write(data);
         return response.end();
@@ -73,8 +73,12 @@ const server = http.createServer((request, response) => {
       console.log("Promotions page rendered successfully.");
       break;
     default:
-      let errorMessage = `${request.url} Not Found`;
+      let errorMessage = `404 Not Found, ${request.url}`;
       if (DEBUG) console.log(errorMessage);
+      myEmitter.emit("error", errorMessage);
+      response.writeHead(404, { "Content-Type": "text/plain" });
+      response.write("404 Not Found");
+      response.end();
       break;
   }
 });
