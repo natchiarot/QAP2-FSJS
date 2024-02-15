@@ -1,26 +1,38 @@
-const { error } = require("console");
 const http = require("http");
 const fs = require("fs");
-const myEmitter = require("./logEvents");
+const myEmitter = require("./eventEmitter"); // Importing custom event emitter.
 
+// Importing date-holidays module.
 var Holidays = require("date-holidays");
 var hd = new Holidays("US", "CA");
 
+// Importing weather-js module.
 const Weather = require("@tinoschroeter/weather-js");
 const weather = new Weather();
 
+// Setting up the port for the server.
 const port = 3003;
+
+// Setting global DEBUG variable to true - for debuggung purposes.
 global.DEBUG = true;
 
+// Convert holidays JSON data to HTML list.
 function toHtml(jsonData) {
-  let html = "<ul>";
+  let html = `<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
+  </head>
+  <h1>US & CA Holidays of 2024</h1>
+  <ul>`;
   jsonData.forEach((item) => {
-    html += `<li>${item.name}, ${item.date} - (${item.type})</li>`;
+    html += `
+    <li><b>${item.name}</b>, ${item.date} - (${item.type} holiday)</li>`;
   });
-  html += "<ul/>";
+  html += `<ul/> <br/>
+  <button><a href="/">Go Back</a></button>`;
   return html;
 }
 
+// Function to convert weather data to HTML.
 function weatherToHtml(weatherData) {
   const location = weatherData[0].location.name;
   const day = weatherData[0].current.day;
@@ -31,6 +43,9 @@ function weatherToHtml(weatherData) {
   const skytext = weatherData[0].current.skytext;
 
   let html = `
+  <head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
+  </head>
   <div>
   <h2>Weather in ${location}</h2>
   <h3>${day}</h3>
@@ -38,6 +53,7 @@ function weatherToHtml(weatherData) {
   <p>Temperature: ${temperature}°${degreetype}</p>
   <p>Feels Like: ${feelslike}°${degreetype}</p>
   <Sky: ${skytext}</p>
+  <button><a href="/">Go Back</a></button>
   </div>
   `;
   return html;
@@ -53,12 +69,14 @@ function handleFavicon(request, response) {
   return false; // Request wasn't handled
 }
 
+// Creating the server.
 const server = http.createServer((request, response) => {
   // Check if it was the request was for the favicon.
   if (handleFavicon(request, response)) {
     return; // Exit early if it was for the favicon.
   }
 
+  // Handling the requests for holidays.
   if (request.url === "/holidays") {
     const holidays2024 = hd.getHolidays(2024);
     const html = toHtml(holidays2024);
@@ -69,12 +87,14 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Handling requests for weather.
   if (request.url === "/weather") {
     weather
       .find({ search: "Newfoundland and Labrador, CA", degreeType: "C" })
       .then((weatherData) => {
         const html = weatherToHtml(weatherData);
-        response.writeHead(200, { "Content-Type": "text/html; charset=UTF-8" }); // Added UTF-8 to set the correct encoding in the HTTP response headers.
+        // Added UTF-8 to set the correct encoding in the HTTP response headers.
+        response.writeHead(200, { "Content-Type": "text/html; charset=UTF-8" });
         response.write(html);
         response.end();
       })
@@ -87,6 +107,7 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Debugging log for request URL.
   if (DEBUG) console.log(`Request url: ${request.url}`);
 
   // Handling other requestes (rendering html pages).
@@ -103,7 +124,6 @@ const server = http.createServer((request, response) => {
         response,
         "Root page rendered successfully."
       );
-      // console.log("Root page rendered successfully.");
       break;
     case "/about":
       myEmitter.emit(
@@ -117,7 +137,6 @@ const server = http.createServer((request, response) => {
         response,
         "About page rendered successfully."
       );
-      // console.log("About page rendered successfully.");
       break;
     case "/contact":
       myEmitter.emit(
@@ -131,7 +150,6 @@ const server = http.createServer((request, response) => {
         response,
         "Contact page rendered successfully."
       );
-      // console.log("Contact page rendered successfully.");
       break;
     case "/products":
       myEmitter.emit(
@@ -141,11 +159,10 @@ const server = http.createServer((request, response) => {
         "Products page rendered successfully."
       );
       serverPage(
-        "./views/contact.html",
+        "./views/products.html",
         response,
         "Products page rendered successfully."
       );
-      // console.log("Products page rendered successfully.");
       break;
     case "/subscribe":
       myEmitter.emit(
@@ -159,7 +176,6 @@ const server = http.createServer((request, response) => {
         response,
         "Subscribe page rendered successfully."
       );
-      // console.log("Subscribe page rendered successfully.");
       break;
     case "/updates":
       myEmitter.emit(
@@ -173,7 +189,6 @@ const server = http.createServer((request, response) => {
         response,
         "Updates page rendered successfully."
       );
-      // console.log("Updates page rendered successfully.");
       break;
     case "/promotions":
       myEmitter.emit(
@@ -187,7 +202,6 @@ const server = http.createServer((request, response) => {
         response,
         "Promotions page rendered successfully."
       );
-      // console.log("Promotions page rendered successfully.");
       break;
     default:
       let errorMessage = request.url;
@@ -196,14 +210,19 @@ const server = http.createServer((request, response) => {
   }
 });
 
+// Function to start the server and listen on the specified port.
 server.listen(port, () => {
   console.log(`The server is running on port ${port}`);
 });
 
+// Function to serve HTML pages.
 function serverPage(filePath, response, message) {
+  // Reading the content of the specified file.
   fs.readFile(filePath, function (err, data) {
     if (err) {
+      // Emitting an ERROR event if there's an error reading the file.
       myEmitter.emit("ERROR", err);
+      // Sending a 500 Internal Server Error response.
       response.writeHead(500, { "Content-Type": "text/plain" });
       response.write(`500 Internal Server Error`);
       return response.end();
@@ -216,6 +235,7 @@ function serverPage(filePath, response, message) {
     response.write(data);
     response.end();
 
+    // Emitting a status event based on the status code.
     if (statusCode !== 200) {
       myEmitter.emit("status", statusCode, "Not Found");
     } else {
