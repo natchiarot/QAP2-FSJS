@@ -1,7 +1,6 @@
-const { error } = require("console");
 const http = require("http");
 const fs = require("fs");
-const myEmitter = require("./logEvents");
+const myEmitter = require("./eventEmitter");
 
 var Holidays = require("date-holidays");
 var hd = new Holidays("US", "CA");
@@ -84,7 +83,8 @@ const server = http.createServer((request, response) => {
       .find({ search: "Newfoundland and Labrador, CA", degreeType: "C" })
       .then((weatherData) => {
         const html = weatherToHtml(weatherData);
-        response.writeHead(200, { "Content-Type": "text/html; charset=UTF-8" }); // Added UTF-8 to set the correct encoding in the HTTP response headers.
+        // Added UTF-8 to set the correct encoding in the HTTP response headers.
+        response.writeHead(200, { "Content-Type": "text/html; charset=UTF-8" });
         response.write(html);
         response.end();
       })
@@ -113,7 +113,6 @@ const server = http.createServer((request, response) => {
         response,
         "Root page rendered successfully."
       );
-      // console.log("Root page rendered successfully.");
       break;
     case "/about":
       myEmitter.emit(
@@ -127,7 +126,6 @@ const server = http.createServer((request, response) => {
         response,
         "About page rendered successfully."
       );
-      // console.log("About page rendered successfully.");
       break;
     case "/contact":
       myEmitter.emit(
@@ -141,7 +139,6 @@ const server = http.createServer((request, response) => {
         response,
         "Contact page rendered successfully."
       );
-      // console.log("Contact page rendered successfully.");
       break;
     case "/products":
       myEmitter.emit(
@@ -155,7 +152,6 @@ const server = http.createServer((request, response) => {
         response,
         "Products page rendered successfully."
       );
-      // console.log("Products page rendered successfully.");
       break;
     case "/subscribe":
       myEmitter.emit(
@@ -169,7 +165,6 @@ const server = http.createServer((request, response) => {
         response,
         "Subscribe page rendered successfully."
       );
-      // console.log("Subscribe page rendered successfully.");
       break;
     case "/updates":
       myEmitter.emit(
@@ -183,7 +178,6 @@ const server = http.createServer((request, response) => {
         response,
         "Updates page rendered successfully."
       );
-      // console.log("Updates page rendered successfully.");
       break;
     case "/promotions":
       myEmitter.emit(
@@ -197,7 +191,6 @@ const server = http.createServer((request, response) => {
         response,
         "Promotions page rendered successfully."
       );
-      // console.log("Promotions page rendered successfully.");
       break;
     default:
       let errorMessage = request.url;
