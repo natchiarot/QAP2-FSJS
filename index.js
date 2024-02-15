@@ -1,16 +1,22 @@
 const http = require("http");
 const fs = require("fs");
-const myEmitter = require("./eventEmitter");
+const myEmitter = require("./eventEmitter"); // Importing custom event emitter.
 
+// Importing date-holidays module.
 var Holidays = require("date-holidays");
 var hd = new Holidays("US", "CA");
 
+// Importing weather-js module.
 const Weather = require("@tinoschroeter/weather-js");
 const weather = new Weather();
 
+// Setting up the port for the server.
 const port = 3003;
+
+// Setting global DEBUG variable to true - for debuggung purposes.
 global.DEBUG = true;
 
+// Convert holidays JSON data to HTML list.
 function toHtml(jsonData) {
   let html = `<head>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
@@ -26,6 +32,7 @@ function toHtml(jsonData) {
   return html;
 }
 
+// Function to convert weather data to HTML.
 function weatherToHtml(weatherData) {
   const location = weatherData[0].location.name;
   const day = weatherData[0].current.day;
@@ -62,12 +69,14 @@ function handleFavicon(request, response) {
   return false; // Request wasn't handled
 }
 
+// Creating the server.
 const server = http.createServer((request, response) => {
   // Check if it was the request was for the favicon.
   if (handleFavicon(request, response)) {
     return; // Exit early if it was for the favicon.
   }
 
+  // Handling the requests for holidays.
   if (request.url === "/holidays") {
     const holidays2024 = hd.getHolidays(2024);
     const html = toHtml(holidays2024);
@@ -78,6 +87,7 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Handling requests for weather.
   if (request.url === "/weather") {
     weather
       .find({ search: "Newfoundland and Labrador, CA", degreeType: "C" })
@@ -97,6 +107,7 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Debugging log for request URL.
   if (DEBUG) console.log(`Request url: ${request.url}`);
 
   // Handling other requestes (rendering html pages).
@@ -199,14 +210,19 @@ const server = http.createServer((request, response) => {
   }
 });
 
+// Function to start the server and listen on the specified port.
 server.listen(port, () => {
   console.log(`The server is running on port ${port}`);
 });
 
+// Function to serve HTML pages.
 function serverPage(filePath, response, message) {
+  // Reading the content of the specified file.
   fs.readFile(filePath, function (err, data) {
     if (err) {
+      // Emitting an ERROR event if there's an error reading the file.
       myEmitter.emit("ERROR", err);
+      // Sending a 500 Internal Server Error response.
       response.writeHead(500, { "Content-Type": "text/plain" });
       response.write(`500 Internal Server Error`);
       return response.end();
@@ -219,6 +235,7 @@ function serverPage(filePath, response, message) {
     response.write(data);
     response.end();
 
+    // Emitting a status event based on the status code.
     if (statusCode !== 200) {
       myEmitter.emit("status", statusCode, "Not Found");
     } else {
