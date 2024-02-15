@@ -3,18 +3,93 @@ const http = require("http");
 const fs = require("fs");
 const myEmitter = require("./logEvents");
 
-const port = 3003;
+var Holidays = require("date-holidays");
+var hd = new Holidays("US", "CA");
 
+const Weather = require("@tinoschroeter/weather-js");
+const weather = new Weather();
+
+const port = 3003;
 global.DEBUG = true;
 
-const server = http.createServer((request, response) => {
+function toHtml(jsonData) {
+  let html = "<ul>";
+  jsonData.forEach((item) => {
+    html += `<li>${item.name}, ${item.date} - (${item.type})</li>`;
+  });
+  html += "<ul/>";
+  return html;
+}
+
+function weatherToHtml(weatherData) {
+  const location = weatherData[0].location.name;
+  const day = weatherData[0].current.day;
+  const curImageUrl = weatherData[0].current.imageUrl;
+  const temperature = weatherData[0].current.temperature;
+  const feelslike = weatherData[0].current.feelslike;
+  const degreetype = weatherData[0].location.degreetype;
+  const skytext = weatherData[0].current.skytext;
+
+  let html = `
+  <div>
+  <h2>Weather in ${location}</h2>
+  <h3>${day}</h3>
+  <img src="${curImageUrl}" alt="Weather Image Two">
+  <p>Temperature: ${temperature}°${degreetype}</p>
+  <p>Feels Like: ${feelslike}°${degreetype}</p>
+  <Sky: ${skytext}</p>
+  </div>
+  `;
+  return html;
+}
+
+// Handling favicon.ico requests - so they're ignored.
+function handleFavicon(request, response) {
   if (request.url === "/favicon.ico") {
-    // Handling favicon.ico requests - so they're ignored.
     response.writeHead(204, { "Content-Type": "image/x-icon" });
+    response.end();
+    return true; // Request was handled
+  }
+  return false; // Request wasn't handled
+}
+
+const server = http.createServer((request, response) => {
+  // Check if it was the request was for the favicon.
+  if (handleFavicon(request, response)) {
+    return; // Exit early if it was for the favicon.
+  }
+
+  if (request.url === "/holidays") {
+    const holidays2024 = hd.getHolidays(2024);
+    const html = toHtml(holidays2024);
+
+    response.writeHead(200, { "Content-Type": "text/html" });
+    response.write(html);
     response.end();
     return;
   }
+
+  if (request.url === "/weather") {
+    weather
+      .find({ search: "Newfoundland and Labrador, CA", degreeType: "C" })
+      .then((weatherData) => {
+        const html = weatherToHtml(weatherData);
+        response.writeHead(200, { "Content-Type": "text/html; charset=UTF-8" }); // Added UTF-8 to set the correct encoding in the HTTP response headers.
+        response.write(html);
+        response.end();
+      })
+      .catch((error) => {
+        console.error("Error fetching weather data: ", error);
+        response.writeHead(500, { "Content-Type": "text/plain" });
+        response.write("500 Internal Server Error");
+        response.end();
+      });
+    return;
+  }
+
   if (DEBUG) console.log(`Request url: ${request.url}`);
+
+  // Handling other requestes (rendering html pages).
   switch (request.url) {
     case "/":
       myEmitter.emit(
