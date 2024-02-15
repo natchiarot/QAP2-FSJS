@@ -13,11 +13,17 @@ const port = 3003;
 global.DEBUG = true;
 
 function toHtml(jsonData) {
-  let html = "<ul>";
+  let html = `<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
+  </head>
+  <h1>US & CA Holidays of 2024</h1>
+  <ul>`;
   jsonData.forEach((item) => {
-    html += `<li>${item.name}, ${item.date} - (${item.type})</li>`;
+    html += `
+    <li><b>${item.name}</b>, ${item.date} - (${item.type} holiday)</li>`;
   });
-  html += "<ul/>";
+  html += `<ul/> <br/>
+  <button><a href="/">Go Back</a></button>`;
   return html;
 }
 
@@ -31,6 +37,9 @@ function weatherToHtml(weatherData) {
   const skytext = weatherData[0].current.skytext;
 
   let html = `
+  <head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.css">
+  </head>
   <div>
   <h2>Weather in ${location}</h2>
   <h3>${day}</h3>
@@ -38,6 +47,7 @@ function weatherToHtml(weatherData) {
   <p>Temperature: ${temperature}°${degreetype}</p>
   <p>Feels Like: ${feelslike}°${degreetype}</p>
   <Sky: ${skytext}</p>
+  <button><a href="/">Go Back</a></button>
   </div>
   `;
   return html;
@@ -141,7 +151,7 @@ const server = http.createServer((request, response) => {
         "Products page rendered successfully."
       );
       serverPage(
-        "./views/contact.html",
+        "./views/products.html",
         response,
         "Products page rendered successfully."
       );
